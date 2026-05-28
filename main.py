@@ -111,7 +111,13 @@ class YordamchiApp:
         def _get_response():
             try:
                 if self.window:
-                    self.window.set_thinking_state(True)
+                    # GUI ni faqat main threaddan yangilash
+                    from PyQt6.QtCore import QMetaObject, Qt, Q_ARG
+                    QMetaObject.invokeMethod(
+                        self.window, "set_thinking_state",
+                        Qt.ConnectionType.QueuedConnection,
+                        Q_ARG(bool, True)
+                    )
 
                 # Tezkor javobni tekshirish
                 quick = self.brain.quick_response(text)
@@ -125,20 +131,15 @@ class YordamchiApp:
                     self._deliver_response(auto_result)
                     return
 
-                # Agent yoki to'g'ridan-to'g'ri AI
-                agent_result = self.agents.execute_task(text)
-                if agent_result:
-                    self._deliver_response(agent_result)
-                else:
-                    # Tizim konteksti
-                    context = ""
-                    if self.system_monitor:
-                        alert = self.system_monitor.get_alert()
-                        if alert:
-                            context = f"Tizim ogohlantirishlari: {alert}"
+                # To'g'ridan-to'g'ri AI javob (agent o'rniga)
+                context = ""
+                if self.system_monitor:
+                    alert = self.system_monitor.get_alert()
+                    if alert:
+                        context = f"Tizim ogohlantirishlari: {alert}"
 
-                    response = self.brain.think(text, context=context)
-                    self._deliver_response(response)
+                response = self.brain.think(text, context=context, stream=False)
+                self._deliver_response(response)
 
             except Exception as e:
                 logger.error(f"Process input xatolik: {e}")
@@ -148,14 +149,21 @@ class YordamchiApp:
         thread.start()
 
     def _deliver_response(self, text: str):
-        """Javobni foydalanuvchiga yetkazish"""
+        """Javobni foydalanuvchiga yetkazish (thread-safe)"""
         if self.window:
-            self.window.set_thinking_state(False)
-            self.window.show_response(text)
+            # QTimer.singleShot orqali main thread da bajarish
+            from PyQt6.QtCore import QTimer
+            QTimer.singleShot(0, lambda: self._update_gui_response(text))
 
         # Ovozli javob
         if self.voice:
             self.voice.speak(text)
+
+    def _update_gui_response(self, text: str):
+        """GUI ni yangilash (faqat main thread da)"""
+        if self.window:
+            self.window.set_thinking_state(False)
+            self.window.show_response(text)
 
     def _on_system_stats_update(self, stats):
         """Tizim statistikasi yangilanganda"""

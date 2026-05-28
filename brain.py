@@ -22,8 +22,15 @@ try:
     import google.generativeai as genai
     GEMINI_AVAILABLE = True
 except ImportError:
-    GEMINI_AVAILABLE = False
-    logger.warning("Google Generative AI o'rnatilmagan!")
+    try:
+        from google import genai as genai_new
+        GEMINI_AVAILABLE = True
+        # Yangi kutubxona uchun wrapper
+        genai = None
+    except ImportError:
+        GEMINI_AVAILABLE = False
+        genai = None
+        logger.warning("Google Generative AI o'rnatilmagan!")
 
 try:
     import ollama

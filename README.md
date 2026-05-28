@@ -6,6 +6,12 @@ Iron Man dagi JARVIS uslubidagi shaxsiy AI yordamchi dastur. Cyberpunk + Hologra
 ![Python](https://img.shields.io/badge/python-3.11+-7b2ff7)
 ![License](https://img.shields.io/badge/license-MIT-ff006e)
 
+## 🎨 Live Demo
+
+Dasturning vizual ko'rinishini bevosita brauzerda ko'rish uchun **`demo.html`** faylini oching!
+
+> Demo da: animated particles, holographic orb, neon grid, glassmorphism panellar, real-time tizim monitor va interaktiv chat tizimi mavjud.
+
 ## ✨ Asosiy Imkoniyatlar
 
 - 🧠 **Hybrid AI** - Gemini 2.0 Flash (online) + Ollama (offline)

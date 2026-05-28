@@ -1,0 +1,851 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>YORDAMCHI - AI Assistant Demo</title>
+<style>
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: 'Segoe UI', system-ui, sans-serif;
+}
+
+body {
+    background: #0a0e1a;
+    color: #e0e6ff;
+    overflow: hidden;
+    height: 100vh;
+    width: 100vw;
+}
+
+/* === BACKGROUND EFFECTS === */
+.bg-grid {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-image: 
+        linear-gradient(rgba(0, 245, 255, 0.05) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(0, 245, 255, 0.05) 1px, transparent 1px);
+    background-size: 60px 60px;
+    pointer-events: none;
+    z-index: 1;
+    animation: gridMove 20s linear infinite;
+}
+
+@keyframes gridMove {
+    0% { background-position: 0 0; }
+    100% { background-position: 60px 60px; }
+}
+
+.bg-scanlines {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: repeating-linear-gradient(
+        0deg,
+        transparent,
+        transparent 2px,
+        rgba(0, 0, 0, 0.15) 2px,
+        rgba(0, 0, 0, 0.15) 4px
+    );
+    pointer-events: none;
+    z-index: 2;
+}
+
+#particles {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    z-index: 3;
+}
+
+/* === MAIN LAYOUT === */
+.main-container {
+    position: relative;
+    display: flex;
+    width: 100%;
+    height: 100vh;
+    padding: 16px;
+    gap: 16px;
+    z-index: 10;
+}
+
+/* === GLASS PANELS === */
+.glass-panel {
+    background: rgba(20, 24, 41, 0.6);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid rgba(0, 245, 255, 0.2);
+    border-radius: 16px;
+    padding: 20px;
+    box-shadow: 
+        0 0 40px rgba(0, 245, 255, 0.1),
+        inset 0 0 20px rgba(0, 245, 255, 0.05);
+}
+
+/* === LEFT PANEL: SYSTEM MONITOR === */
+.left-panel {
+    width: 280px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.panel-title {
+    font-size: 12px;
+    font-weight: bold;
+    color: #00f5ff;
+    letter-spacing: 2px;
+    margin-bottom: 8px;
+    text-shadow: 0 0 10px rgba(0, 245, 255, 0.5);
+}
+
+.panel-divider {
+    height: 1px;
+    background: linear-gradient(90deg, transparent, #00f5ff, transparent);
+    margin-bottom: 12px;
+}
+
+.stat-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 12px;
+    background: rgba(10, 14, 26, 0.5);
+    border-radius: 10px;
+    margin-bottom: 8px;
+    border: 1px solid rgba(0, 245, 255, 0.1);
+    transition: all 0.3s;
+}
+
+.stat-item:hover {
+    border-color: rgba(0, 245, 255, 0.4);
+    transform: translateX(3px);
+}
+
+.stat-label {
+    font-size: 12px;
+    color: #8c96b4;
+}
+
+.stat-value {
+    font-family: 'Consolas', 'Courier New', monospace;
+    font-size: 13px;
+    color: #00f5ff;
+    font-weight: bold;
+}
+
+.progress-bar {
+    width: 100%;
+    height: 4px;
+    background: rgba(0, 0, 0, 0.5);
+    border-radius: 2px;
+    overflow: hidden;
+    margin-top: 6px;
+}
+
+.progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #00f5ff, #7b2ff7);
+    border-radius: 2px;
+    transition: width 0.5s ease;
+    box-shadow: 0 0 10px #00f5ff;
+}
+
+.ai-status {
+    margin-top: auto;
+    padding: 12px;
+    background: rgba(0, 255, 136, 0.1);
+    border-radius: 10px;
+    border: 1px solid rgba(0, 255, 136, 0.3);
+    text-align: center;
+    font-size: 12px;
+    color: #00ff88;
+}
+
+.ai-status.thinking {
+    background: rgba(255, 170, 0, 0.1);
+    border-color: rgba(255, 170, 0, 0.3);
+    color: #ffaa00;
+}
+
+/* === CENTER PANEL === */
+.center-panel {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 20px;
+    position: relative;
+}
+
+.greeting {
+    text-align: center;
+}
+
+.greeting h1 {
+    font-size: 28px;
+    background: linear-gradient(90deg, #00f5ff, #7b2ff7, #ff006e);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    font-weight: bold;
+    margin-bottom: 4px;
+}
+
+.greeting p {
+    color: #8c96b4;
+    font-size: 13px;
+}
+
+/* === HOLOGRAPHIC ORB === */
+.orb-container {
+    position: relative;
+    width: 280px;
+    height: 280px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+}
+
+.orb {
+    position: absolute;
+    width: 180px;
+    height: 180px;
+    border-radius: 50%;
+    background: radial-gradient(
+        circle at 30% 30%,
+        rgba(0, 245, 255, 0.7),
+        rgba(123, 47, 247, 0.5) 50%,
+        rgba(10, 14, 26, 0.1) 100%
+    );
+    box-shadow: 
+        0 0 60px rgba(0, 245, 255, 0.6),
+        0 0 100px rgba(123, 47, 247, 0.4),
+        inset 0 0 40px rgba(0, 245, 255, 0.3);
+    animation: orbPulse 3s ease-in-out infinite;
+}
+
+@keyframes orbPulse {
+    0%, 100% { 
+        transform: scale(1);
+        box-shadow: 
+            0 0 60px rgba(0, 245, 255, 0.6),
+            0 0 100px rgba(123, 47, 247, 0.4),
+            inset 0 0 40px rgba(0, 245, 255, 0.3);
+    }
+    50% { 
+        transform: scale(1.08);
+        box-shadow: 
+            0 0 80px rgba(0, 245, 255, 0.8),
+            0 0 140px rgba(123, 47, 247, 0.6),
+            inset 0 0 50px rgba(0, 245, 255, 0.5);
+    }
+}
+
+.orb.listening {
+    background: radial-gradient(
+        circle at 30% 30%,
+        rgba(0, 245, 255, 0.9),
+        rgba(0, 200, 255, 0.6) 50%,
+        rgba(10, 14, 26, 0.1) 100%
+    );
+    animation: orbPulse 0.8s ease-in-out infinite;
+}
+
+.orb.thinking {
+    background: radial-gradient(
+        circle at 30% 30%,
+        rgba(255, 170, 0, 0.8),
+        rgba(255, 100, 0, 0.5) 50%,
+        rgba(10, 14, 26, 0.1) 100%
+    );
+}
+
+.orb.speaking {
+    background: radial-gradient(
+        circle at 30% 30%,
+        rgba(0, 255, 136, 0.8),
+        rgba(0, 200, 100, 0.5) 50%,
+        rgba(10, 14, 26, 0.1) 100%
+    );
+    animation: orbPulse 0.5s ease-in-out infinite;
+}
+
+.orbital-ring {
+    position: absolute;
+    border-radius: 50%;
+    border: 1px solid rgba(0, 245, 255, 0.3);
+    animation: rotate 8s linear infinite;
+}
+
+.ring-1 {
+    width: 220px;
+    height: 220px;
+    border-color: rgba(0, 245, 255, 0.4);
+}
+
+.ring-2 {
+    width: 250px;
+    height: 250px;
+    border-color: rgba(123, 47, 247, 0.4);
+    animation-duration: 12s;
+    animation-direction: reverse;
+}
+
+.ring-3 {
+    width: 280px;
+    height: 280px;
+    border-color: rgba(255, 0, 110, 0.3);
+    animation-duration: 16s;
+}
+
+@keyframes rotate {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+
+.orb-status {
+    position: absolute;
+    color: #fff;
+    font-size: 13px;
+    font-weight: bold;
+    text-shadow: 0 0 10px rgba(0, 0, 0, 0.8);
+    z-index: 10;
+}
+
+/* === RESPONSE LABEL === */
+.response-label {
+    min-height: 60px;
+    max-height: 100px;
+    width: 80%;
+    max-width: 600px;
+    padding: 12px 20px;
+    text-align: center;
+    color: #e0e6ff;
+    font-size: 14px;
+    line-height: 1.5;
+    overflow-y: auto;
+}
+
+/* === BUTTONS === */
+.btn-row {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    justify-content: center;
+}
+
+.neon-btn {
+    background: rgba(0, 245, 255, 0.1);
+    color: #00f5ff;
+    border: 1px solid rgba(0, 245, 255, 0.4);
+    border-radius: 12px;
+    padding: 10px 20px;
+    font-size: 13px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.3s;
+    font-family: inherit;
+}
+
+.neon-btn:hover {
+    background: rgba(0, 245, 255, 0.25);
+    border-color: rgba(0, 245, 255, 0.8);
+    box-shadow: 0 0 20px rgba(0, 245, 255, 0.4);
+    transform: translateY(-2px);
+}
+
+.neon-btn.btn-error {
+    color: #ff3366;
+    border-color: rgba(255, 51, 102, 0.4);
+    background: rgba(255, 51, 102, 0.1);
+}
+
+.neon-btn.btn-error:hover {
+    background: rgba(255, 51, 102, 0.25);
+    border-color: rgba(255, 51, 102, 0.8);
+    box-shadow: 0 0 20px rgba(255, 51, 102, 0.4);
+}
+
+.neon-btn.btn-warning {
+    color: #ffaa00;
+    border-color: rgba(255, 170, 0, 0.4);
+    background: rgba(255, 170, 0, 0.1);
+}
+
+.neon-btn.btn-secondary {
+    color: #7b2ff7;
+    border-color: rgba(123, 47, 247, 0.4);
+    background: rgba(123, 47, 247, 0.1);
+}
+
+/* === INPUT FIELD === */
+.neon-input {
+    width: 80%;
+    max-width: 600px;
+    background: rgba(20, 24, 41, 0.8);
+    color: #e0e6ff;
+    border: 2px solid rgba(0, 245, 255, 0.3);
+    border-radius: 24px;
+    padding: 14px 24px;
+    font-size: 14px;
+    transition: all 0.3s;
+    font-family: inherit;
+}
+
+.neon-input:focus {
+    outline: none;
+    border-color: #00f5ff;
+    box-shadow: 0 0 20px rgba(0, 245, 255, 0.4);
+}
+
+.neon-input::placeholder {
+    color: rgba(140, 150, 180, 0.6);
+}
+
+/* === RIGHT PANEL: MISSION LOG === */
+.right-panel {
+    width: 340px;
+    display: flex;
+    flex-direction: column;
+}
+
+.right-panel .panel-title {
+    color: #7b2ff7;
+    text-shadow: 0 0 10px rgba(123, 47, 247, 0.5);
+}
+
+.right-panel .panel-divider {
+    background: linear-gradient(90deg, transparent, #7b2ff7, transparent);
+}
+
+.chat-area {
+    flex: 1;
+    overflow-y: auto;
+    padding-right: 4px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.chat-area::-webkit-scrollbar {
+    width: 6px;
+}
+
+.chat-area::-webkit-scrollbar-track {
+    background: rgba(20, 24, 41, 0.5);
+    border-radius: 3px;
+}
+
+.chat-area::-webkit-scrollbar-thumb {
+    background: rgba(123, 47, 247, 0.5);
+    border-radius: 3px;
+}
+
+.chat-message {
+    padding: 12px 16px;
+    border-radius: 14px;
+    font-size: 13px;
+    line-height: 1.4;
+    animation: fadeIn 0.4s ease;
+}
+
+@keyframes fadeIn {
+    from { 
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to { 
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.chat-user {
+    background: linear-gradient(135deg, rgba(0, 245, 255, 0.15), rgba(123, 47, 247, 0.15));
+    border: 1px solid rgba(0, 245, 255, 0.3);
+    align-self: flex-end;
+    margin-left: 20px;
+}
+
+.chat-assistant {
+    background: rgba(25, 30, 52, 0.8);
+    border: 1px solid rgba(123, 47, 247, 0.3);
+    align-self: flex-start;
+    margin-right: 20px;
+}
+
+/* === BADGE / TAG === */
+.demo-badge {
+    position: fixed;
+    top: 16px;
+    right: 16px;
+    z-index: 1000;
+    background: linear-gradient(90deg, #ff006e, #7b2ff7);
+    padding: 6px 14px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: bold;
+    color: white;
+    box-shadow: 0 0 20px rgba(255, 0, 110, 0.5);
+    animation: badgePulse 2s ease-in-out infinite;
+}
+
+@keyframes badgePulse {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.05); }
+}
+
+/* === RESPONSIVE === */
+@media (max-width: 1100px) {
+    .left-panel { width: 240px; }
+    .right-panel { width: 280px; }
+}
+
+@media (max-width: 900px) {
+    .main-container { flex-direction: column; }
+    .left-panel, .right-panel { width: 100%; }
+}
+</style>
+</head>
+<body>
+
+<!-- Background Effects -->
+<div class="bg-grid"></div>
+<div class="bg-scanlines"></div>
+<canvas id="particles"></canvas>
+
+<!-- Demo Badge -->
+<div class="demo-badge">🎨 LIVE DEMO</div>
+
+<!-- Main Layout -->
+<div class="main-container">
+
+    <!-- LEFT PANEL: SYSTEM MONITOR -->
+    <div class="left-panel glass-panel">
+        <div class="panel-title">⚡ TIZIM MONITORI</div>
+        <div class="panel-divider"></div>
+        
+        <div class="stat-item">
+            <div>
+                <div class="stat-label">🕐 Vaqt</div>
+            </div>
+            <div class="stat-value" id="time-value">00:00:00</div>
+        </div>
+        
+        <div class="stat-item">
+            <div style="flex:1">
+                <div style="display:flex;justify-content:space-between">
+                    <span class="stat-label">⚙️ CPU</span>
+                    <span class="stat-value" id="cpu-value">42%</span>
+                </div>
+                <div class="progress-bar">
+                    <div class="progress-fill" id="cpu-bar" style="width:42%"></div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="stat-item">
+            <div style="flex:1">
+                <div style="display:flex;justify-content:space-between">
+                    <span class="stat-label">🧠 RAM</span>
+                    <span class="stat-value" id="ram-value">68%</span>
+                </div>
+                <div class="progress-bar">
+                    <div class="progress-fill" id="ram-bar" style="width:68%"></div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="stat-item">
+            <div style="flex:1">
+                <div style="display:flex;justify-content:space-between">
+                    <span class="stat-label">💾 Disk</span>
+                    <span class="stat-value" id="disk-value">54%</span>
+                </div>
+                <div class="progress-bar">
+                    <div class="progress-fill" id="disk-bar" style="width:54%"></div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="stat-item">
+            <div>
+                <div class="stat-label">🌐 Tarmoq</div>
+            </div>
+            <div class="stat-value" id="net-value">2.4 MB/s</div>
+        </div>
+        
+        <div class="stat-item">
+            <div>
+                <div class="stat-label">🔋 Batareya</div>
+            </div>
+            <div class="stat-value">⚡ 87%</div>
+        </div>
+        
+        <div class="ai-status" id="ai-status">
+            🤖 AI: Tayyor (Gemini 2.0)
+        </div>
+    </div>
+
+    <!-- CENTER PANEL: ORB + CONTROLS -->
+    <div class="center-panel">
+        <div class="greeting">
+            <h1>🌟 Xayrli kun, Sarvar!</h1>
+            <p id="date-text">Chorshanba, 28-May 2026, 15:42</p>
+        </div>
+
+        <div class="orb-container" id="orb-container">
+            <div class="orbital-ring ring-3"></div>
+            <div class="orbital-ring ring-2"></div>
+            <div class="orbital-ring ring-1"></div>
+            <div class="orb" id="orb"></div>
+            <div class="orb-status" id="orb-status">⚡ Tayyor</div>
+        </div>
+
+        <div class="response-label" id="response-label">
+            Mikrofonni bosing yoki yozing... Sizga qanday yordam bera olaman?
+        </div>
+
+        <div class="btn-row">
+            <button class="neon-btn" id="btn-mic" onclick="toggleListening()">🎤 Tinglash</button>
+            <button class="neon-btn btn-error" onclick="stopAll()">⏹ To'xtat</button>
+            <button class="neon-btn btn-warning" onclick="clearChat()">🗑 Tozalash</button>
+            <button class="neon-btn btn-secondary" onclick="alert('⚙️ Sozlamalar oynasi (PyQt6 da to`liq ishlaydi)')">⚙️ Sozlamalar</button>
+        </div>
+
+        <input type="text" class="neon-input" id="user-input" 
+               placeholder="💬 Yozing yoki mikrofon bosing..." 
+               onkeydown="if(event.key==='Enter')sendMessage()">
+    </div>
+
+    <!-- RIGHT PANEL: MISSION LOG -->
+    <div class="right-panel glass-panel">
+        <div class="panel-title">📋 MISSION LOG</div>
+        <div class="panel-divider"></div>
+        
+        <div class="chat-area" id="chat-area">
+            <div class="chat-message chat-assistant">
+                🤖 Xush kelibsiz, Sarvar! Men Yordamchiman. Sizga qanday yordam bera olaman?
+            </div>
+            <div class="chat-message chat-user">
+                👤 Salom Yordamchi, qanday holatda?
+            </div>
+            <div class="chat-message chat-assistant">
+                🤖 Salom! Men ajoyib holatda. Bugun siz uchun nima qilishim kerak? Kod yozish, ma'lumot qidirish yoki rejalashtirish kabi vazifalar bilan yordam berishim mumkin.
+            </div>
+            <div class="chat-message chat-user">
+                👤 YouTube ochib ber
+            </div>
+            <div class="chat-message chat-assistant">
+                🤖 Albatta! YouTube ochildi 🎬
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// === PARTICLE SYSTEM ===
+const canvas = document.getElementById('particles');
+const ctx = canvas.getContext('2d');
+
+function resizeCanvas() {
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+}
+resizeCanvas();
+window.addEventListener('resize', resizeCanvas);
+
+const colors = ['#00f5ff', '#7b2ff7', '#ff006e'];
+const particles = [];
+
+class Particle {
+    constructor() {
+        this.reset();
+        this.y = Math.random() * canvas.height;
+    }
+    reset() {
+        this.x = Math.random() * canvas.width;
+        this.y = canvas.height + 10;
+        this.vx = (Math.random() - 0.5) * 0.6;
+        this.vy = -(Math.random() * 0.5 + 0.1);
+        this.size = Math.random() * 2 + 1;
+        this.color = colors[Math.floor(Math.random() * colors.length)];
+        this.alpha = Math.random() * 0.5 + 0.2;
+        this.life = 1.0;
+    }
+    update() {
+        this.x += this.vx;
+        this.y += this.vy;
+        this.life -= 0.003;
+        if (this.life <= 0 || this.y < -10) this.reset();
+    }
+    draw() {
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+        ctx.fillStyle = this.color;
+        ctx.globalAlpha = this.alpha * this.life;
+        ctx.shadowBlur = 10;
+        ctx.shadowColor = this.color;
+        ctx.fill();
+        ctx.globalAlpha = 1;
+        ctx.shadowBlur = 0;
+    }
+}
+
+for (let i = 0; i < 80; i++) {
+    particles.push(new Particle());
+}
+
+function animateParticles() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    particles.forEach(p => {
+        p.update();
+        p.draw();
+    });
+    requestAnimationFrame(animateParticles);
+}
+animateParticles();
+
+// === REAL-TIME CLOCK ===
+function updateClock() {
+    const now = new Date();
+    const h = String(now.getHours()).padStart(2, '0');
+    const m = String(now.getMinutes()).padStart(2, '0');
+    const s = String(now.getSeconds()).padStart(2, '0');
+    document.getElementById('time-value').textContent = `${h}:${m}:${s}`;
+    
+    const days = ['Yakshanba', 'Dushanba', 'Seshanba', 'Chorshanba', 'Payshanba', 'Juma', 'Shanba'];
+    const months = ['Yanvar', 'Fevral', 'Mart', 'Aprel', 'May', 'Iyun', 'Iyul', 'Avgust', 'Sentabr', 'Oktabr', 'Noyabr', 'Dekabr'];
+    const dateStr = `${days[now.getDay()]}, ${now.getDate()}-${months[now.getMonth()]} ${now.getFullYear()}, ${h}:${m}`;
+    document.getElementById('date-text').textContent = dateStr;
+}
+updateClock();
+setInterval(updateClock, 1000);
+
+// === SYSTEM STATS SIMULATION ===
+function updateStats() {
+    const cpu = Math.floor(Math.random() * 40) + 30;
+    const ram = Math.floor(Math.random() * 30) + 50;
+    const net = (Math.random() * 5).toFixed(1);
+    
+    document.getElementById('cpu-value').textContent = `${cpu}%`;
+    document.getElementById('cpu-bar').style.width = `${cpu}%`;
+    document.getElementById('ram-value').textContent = `${ram}%`;
+    document.getElementById('ram-bar').style.width = `${ram}%`;
+    document.getElementById('net-value').textContent = `${net} MB/s`;
+}
+setInterval(updateStats, 2000);
+
+// === ORB INTERACTIONS ===
+const orb = document.getElementById('orb');
+const orbStatus = document.getElementById('orb-status');
+const responseLabel = document.getElementById('response-label');
+const aiStatus = document.getElementById('ai-status');
+let isListening = false;
+
+document.getElementById('orb-container').addEventListener('click', toggleListening);
+
+function toggleListening() {
+    isListening = !isListening;
+    if (isListening) {
+        orb.classList.add('listening');
+        orbStatus.textContent = '🎤 Tinglayapman...';
+        responseLabel.textContent = '🎤 Tinglayapman... Gapiring!';
+        aiStatus.textContent = '🤖 AI: Tinglamoqda';
+        aiStatus.classList.add('thinking');
+    } else {
+        orb.classList.remove('listening');
+        orbStatus.textContent = '⚡ Tayyor';
+        responseLabel.textContent = 'Mikrofonni bosing yoki yozing...';
+        aiStatus.textContent = '🤖 AI: Tayyor (Gemini 2.0)';
+        aiStatus.classList.remove('thinking');
+    }
+}
+
+function stopAll() {
+    orb.classList.remove('listening', 'thinking', 'speaking');
+    orbStatus.textContent = '⚡ Tayyor';
+    responseLabel.textContent = 'To`xtatildi';
+    aiStatus.textContent = '🤖 AI: Tayyor (Gemini 2.0)';
+    aiStatus.classList.remove('thinking');
+    isListening = false;
+}
+
+function clearChat() {
+    document.getElementById('chat-area').innerHTML = '';
+    responseLabel.textContent = 'Mission Log tozalandi';
+}
+
+// === MESSAGE SYSTEM ===
+const responses = [
+    "🤖 Buyrug'ingiz qabul qilindi. Bajarilmoqda...",
+    "🤖 Albatta! Sizga yordam beraman.",
+    "🤖 Tushundim. Hozir bajaraman.",
+    "🤖 Ajoyib savol! Javob beraman...",
+    "🤖 Hozir tekshirib ko'raman."
+];
+
+function sendMessage() {
+    const input = document.getElementById('user-input');
+    const text = input.value.trim();
+    if (!text) return;
+    
+    addMessage(`👤 ${text}`, 'user');
+    input.value = '';
+    
+    // Thinking
+    orb.classList.remove('listening');
+    orb.classList.add('thinking');
+    orbStatus.textContent = '🧠 O\'ylayapman...';
+    responseLabel.textContent = '🧠 O\'ylayapman...';
+    aiStatus.textContent = '🤖 AI: Fikrlanmoqda';
+    aiStatus.classList.add('thinking');
+    
+    setTimeout(() => {
+        // Speaking
+        orb.classList.remove('thinking');
+        orb.classList.add('speaking');
+        orbStatus.textContent = '🔊 Gapiryapman...';
+        const reply = responses[Math.floor(Math.random() * responses.length)];
+        responseLabel.textContent = reply;
+        addMessage(reply, 'assistant');
+        aiStatus.textContent = '🤖 AI: Tayyor (Gemini 2.0)';
+        aiStatus.classList.remove('thinking');
+        
+        setTimeout(() => {
+            orb.classList.remove('speaking');
+            orbStatus.textContent = '⚡ Tayyor';
+        }, 2000);
+    }, 1500);
+}
+
+function addMessage(text, type) {
+    const chatArea = document.getElementById('chat-area');
+    const msg = document.createElement('div');
+    msg.className = `chat-message chat-${type}`;
+    msg.textContent = text;
+    chatArea.appendChild(msg);
+    chatArea.scrollTop = chatArea.scrollHeight;
+}
+
+// === KEYBOARD SHORTCUTS ===
+document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') stopAll();
+});
+</script>
+
+</body>
+</html>

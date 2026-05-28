@@ -1,0 +1,39 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+*.egg-info/
+.pytest_cache/
+
+# Virtual environment
+venv/
+env/
+ENV/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Yordamchi maxfiy ma'lumotlar
+data/memory/chromadb/
+data/faces/*.npy
+data/faces/*.jpg
+data/logs/
+data/config.json
+.env
+
+# Build
+dist/
+build/
+*.spec
+
+# Temp
+extract_temp/

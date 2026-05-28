@@ -1,0 +1,43 @@
+# ===== YORDAMCHI - AI Assistant Dependencies =====
+# Core GUI
+PyQt6>=6.6.0
+PyQt6-Charts>=6.6.0
+
+# AI & LLM
+google-generativeai>=0.4.0
+ollama>=0.1.6
+langchain>=0.1.0
+langchain-google-genai>=0.0.6
+
+# Voice
+SpeechRecognition>=3.10.0
+pyttsx3>=2.90
+pyaudio>=0.2.14
+pvporcupine>=3.0.0
+webrtcvad>=2.0.10
+
+# Computer Vision
+opencv-python>=4.9.0
+mediapipe>=0.10.9
+deepface>=0.0.79
+Pillow>=10.2.0
+
+# Automation
+pyautogui>=0.9.54
+pynput>=1.7.6
+pyperclip>=1.8.2
+
+# System
+psutil>=5.9.7
+screeninfo>=0.8.1
+
+# Memory & RAG
+chromadb>=0.4.22
+sentence-transformers>=2.3.1
+
+# Utilities
+requests>=2.31.0
+beautifulsoup4>=4.12.2
+schedule>=1.2.1
+python-dotenv>=1.0.0
+numpy>=1.26.0
